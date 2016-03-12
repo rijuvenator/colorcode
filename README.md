@@ -40,7 +40,7 @@ decode.py INPUTFILE [COLS][ROWS]
 ````
 Options:
   * `COLS` (`ROWS`) is the number of distinct columns (rows) in the image grid, or equivalently,  
-    `COLS` (`ROWS) is the image width (height) divided by `COLWIDTH` (`ROWHEIGHT`)
+    `COLS` (`ROWS`) is the image width (height) divided by `COLWIDTH` (`ROWHEIGHT`)
     * Specify neither (then, every pixel will be assumed to be a new color; equivalent to `decode.py INPUTFILE 1 1`)
     * Specify both; just one number cannot be specified
 
