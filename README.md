@@ -33,7 +33,7 @@ That is, `colorcode.py - 1 1 image.png` and `colorcode.py -` are equivalent.
 
 The last two numbers from the output (the color dimensions) are important for decoding the image (see below)
 
-### Decoding Text
+### Decoding Images
 To decode an image file produced in this way, do
 ````
 decode.py INPUTFILE [COLS][ROWS]
