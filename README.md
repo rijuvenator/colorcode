@@ -1,20 +1,23 @@
 # Color Code Script
 
-This is a Python 2.7 script to encrypt ASCII text as an RGB color grid.
+These are Python 2.7 scripts to encrypt ASCII text into images.  
+  * `colorcode.py` encodes ASCII values into an RGB color grid and produces an image
+  * `steg_encode.py` encodes binary ASCII values across the LSBs of the RGB channels of an existing image
 
 ## Requirements
-This script requires Python and Pillow, a Python image processing library. To install Pillow on OS X, first install pip:
+These scripts require Python and Pillow, a Python image processing library. To install Pillow on OS X, first install pip:
 ````
-sudo easy_install pip
+sudo easy\_install pip
 sudo -H pip install Pillow
 ````
 If not already executable, make the scripts executable:
 ````
-chmod +x colorcode.py decode.py
+chmod +x colorcode.py decode.py steg\_encode.py steg\_decode.py
 ````
 
-## Usage
-### Encoding Text
+## `colorcode.py`
+### Usage
+#### Encoding Text
 To encode the text in a file, do
 ````
 colorcode.py INPUTFILE [COLWIDTH] [ROWHEIGHT] [OUTPUTFILE]
@@ -33,7 +36,7 @@ That is, `colorcode.py - 1 1 image.png` and `colorcode.py -` are equivalent.
 
 The last two numbers from the output (the color dimensions) are important for decoding the image (see below)
 
-### Decoding Images
+#### Decoding Images
 To decode an image file produced in this way, do
 ````
 decode.py INPUTFILE [COLS][ROWS]
@@ -46,7 +49,7 @@ Options:
 
 The decoded text will be printed to the terminal.
 
-## Example
+### Example
 `ring.txt` contains the Ring Inscription from The Lord of the Rings.  
 `ring.png` was produced with
 ````
@@ -67,16 +70,16 @@ I included additional poems as samples:
   * `i_am.txt` is a final published version of the same poem differing slightly; comparing the images is interesting
   * `desiderata.txt` is the Desiderata by Max Ehrmann
 
-## Details
-### Overview
+### Technical Details
+#### Overview
 The script multiplies the ASCII value of each character by 2, and produces one color for every 3 characters, corresponding to the RGB value.
 
 For example, "Dog" has ASCII values 68, 111, and 103, so the corresponding color would be RGB(136,222,206), or hex #88DECE.
 
-### Why Multiply by 2?
+#### Why Multiply by 2?
 The ASCII values were multiplied by 2 because ASCII characters end at 127, which means that direct RGB values of ASCII characters are rather dark, since they are restricted to the lower half of their spectrum. Conveniently, 126 is less than half of 255, so multiplying by 2 simply shifts the spectrum into the brighter half without overflow.
 
-### Choosing Dimensions and the Number of Colors
+#### Choosing Dimensions and the Number of Colors
 A single row is an easy way to store the sequence of colors, suitable for short strings like names, but impractical for entire poems. An image that is close to square looks best, but the color dimensions also need to be integral. It's also slightly complicated by the fact that the required number of colors is the ceiling of the message length divided by 3.
 
 So I took X = floor(L/3 + B), where L is the message length and B is 1 if L mod 3 = 0, 0 otherwise. That way, I add an extra color if L/3 is not divisible by 3, but keep the number of colors if it is. Then I set Y = X, and checked if XY < L/3 + B, added a row (Y = Y + 1) if not, checked if XY < L/3 + B again, and added a column (X = X + 1) if not. X and Y are then the final color dimensions.
@@ -88,3 +91,47 @@ When L/3 mod 3 is not 0, the extra color has either R and G set, with B zero, or
 There are usually extra squares, because L/3 + B is usually not a square. The extra squares are filled with white.
 
 When decoding the message, the 0 and 255 (divided by 2, of course) from the extra colors and extra squares are converted to ASCII too. Fortunately for me, 0 maps to NULL, and 127 maps to DEL, neither of which do anything when printed to a screen. Just in case you want to pipe the output to a file, though, to prevent the terminal from treating the text file like a binary file, I stripped all NULLs and DELs from the end of the decoded message. They were never part of the message anyway, and the result is the original input.
+
+## `steg_encode.py`
+### Usage
+#### Encoding Text
+This script requires a preexisting image file `INPUTIMAGE`
+To encode the text in a file, do
+````
+steg\_encode.py INPUTIMAGE INPUTFILE
+````
+To encode text from a command-line prompt, do
+````
+steg\_encode.py INPUTIMAGE
+````
+
+An image file `encoded_INPUTIMAGE` will be produced.
+
+#### Decoding Images
+To decode an image file produced in this way, do
+````
+steg\_decode.py INPUTIMAGE
+````
+
+The decoded text will be printed to the terminal.
+
+### Example
+`encoded_ring.png` was produced with
+````
+steg\_encode.py ring.png desiderata.txt
+````
+and can be decoded with
+````
+steg\_decode.py encoded\_ring.png
+````
+
+### Technical Details
+The script converts the ASCII value of each character into its 8-bit binary representation, then sets the least significant bit of the RGB values of each pixel one at a time. All unused pixels' RGB values' LSBs are set to zero.
+
+For example, 8 pixels could hold 24 bits, or 3 characters. "Dog" has ASCII values 68, 111, and 103, whose 8-bit binary representations are 01000100, 01101111, and 01100111. The last bit in the RGB values of the 8 pixels would be set to each of these bits in order.
+
+To prevent junk when decoding, the last bit in all channels in all pixels are set to zero, then stripped when decoded; thus, the only step required to set the values of each channel correctly is to add 1 to the value if the bit to be encoded is 1; nothing needs to be done if the bit to be encoded is 0. The image will be very slightly different overall, but not enough to be distinguishable by eye.
+
+Interestingly, because my `colorcode.py` script multiplies ASCII values by 2, all RGB values are automatically divisible by 2 and therefore all RGB channels' final bits are zero -- that is, the zero-initialization mentioned above doesn't need to be done for images produced by my `colorcode.py` script. Even more interestingly, because `decode.py` divides the values by 2, and integer division in computer programs is automatically a floor, the last bit is actually discarded, assumed to be zero. That means that `steg_encode.py` does not interfere with the message hidden in any images produced by `colorcode.py`, and two messages can be hidden in the same image file!
+
+In other words, `encoded_ring.png` can also be decoded with `decode.py`, yielding the original `ring.txt`, in addition to being able to be decoded by `steg_decode.py`, yielding `desiderata.txt`.
