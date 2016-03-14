@@ -95,7 +95,8 @@ When decoding the message, the 0 and 255 (divided by 2, of course) from the extr
 ## `steg_encode.py`
 ### Usage
 #### Encoding Text
-This script requires a preexisting image file `INPUTIMAGE`
+This script requires a preexisting image file `INPUTIMAGE`.
+
 To encode the text in a file, do
 ````
 steg_encode.py INPUTIMAGE INPUTFILE
