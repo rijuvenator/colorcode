@@ -7,12 +7,12 @@ These are Python 2.7 scripts to encrypt ASCII text into images.
 ## Requirements
 These scripts require Python and Pillow, a Python image processing library. To install Pillow on OS X, first install pip:
 ````
-sudo easy\_install pip
+sudo easy_install pip
 sudo -H pip install Pillow
 ````
 If not already executable, make the scripts executable:
 ````
-chmod +x colorcode.py decode.py steg\_encode.py steg\_decode.py
+chmod +x colorcode.py decode.py steg_encode.py steg_decode.py
 ````
 
 ## `colorcode.py`
@@ -98,11 +98,11 @@ When decoding the message, the 0 and 255 (divided by 2, of course) from the extr
 This script requires a preexisting image file `INPUTIMAGE`
 To encode the text in a file, do
 ````
-steg\_encode.py INPUTIMAGE INPUTFILE
+steg_encode.py INPUTIMAGE INPUTFILE
 ````
 To encode text from a command-line prompt, do
 ````
-steg\_encode.py INPUTIMAGE
+steg_encode.py INPUTIMAGE
 ````
 
 An image file `encoded_INPUTIMAGE` will be produced.
@@ -110,7 +110,7 @@ An image file `encoded_INPUTIMAGE` will be produced.
 #### Decoding Images
 To decode an image file produced in this way, do
 ````
-steg\_decode.py INPUTIMAGE
+steg_decode.py INPUTIMAGE
 ````
 
 The decoded text will be printed to the terminal.
@@ -118,11 +118,11 @@ The decoded text will be printed to the terminal.
 ### Example
 `encoded_ring.png` was produced with
 ````
-steg\_encode.py ring.png desiderata.txt
+steg_encode.py ring.png desiderata.txt
 ````
 and can be decoded with
 ````
-steg\_decode.py encoded\_ring.png
+steg_decode.py encoded_ring.png
 ````
 
 ### Technical Details
