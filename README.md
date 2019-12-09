@@ -1,138 +1,177 @@
-# Color Code Script
+# ColorCode
 
-These are Python 2.7 scripts to encrypt ASCII text into images.  
+These are **Python 3.7** scripts to encrypt ASCII text into images.
+
   * `colorcode.py` encodes ASCII values into an RGB color grid and produces an image
-  * `steg_encode.py` encodes binary ASCII values across the LSBs of the RGB channels of an existing image
+  * `steganography.py`  encodes binary ASCII values across the LSBs of the RGB channels of an existing image
+
+`demo.png` encodes the source code of `colorcode.py` _using_ `colorcode.py`, _and_ the source code of `steganography.py` _using_ `steganography.py`.
+
+Decode this demo image both ways with
+
+```bash
+python colorcode.py     --decode --inputfile  demo.png --nrows 59 --ncols 58
+python steganography.py --decode --inputimage demo.png
+```
+
+![](demo.png)
 
 ## Requirements
-These scripts require Python and Pillow, a Python image processing library. To install Pillow on OS X, first install pip:
-````
-sudo easy_install pip
-sudo -H pip install Pillow
-````
-If not already executable, make the scripts executable:
-````
-chmod +x colorcode.py decode.py steg_encode.py steg_decode.py
-````
+Scripts use from the standard library
+
+  * `argparse`
+  * `math`
+  * `itertools`
+
+as well as `Pillow`, a Python image processing library.
+
+Install on OS X with
+
+```bash
+pip install Pillow
+conda install Pillow
+```
 
 ## `colorcode.py`
-### Usage
-#### Encoding Text
-To encode the text in a file, do
-````
-colorcode.py INPUTFILE [COLWIDTH] [ROWHEIGHT] [OUTPUTFILE]
-````
-To encode text from a command-line prompt, do
-````
-colorcode.py - [COLWIDTH] [ROWHEIGHT] [OUTPUTFILE]
-````
-Options:
-  * Use `--single` for an image consisting of a single row; by default, a square-ish image will be produced
-  * `COLWIDTH` is the column width in pixels; defaults to `1`
-  * `ROWHEIGHT` is the row height in pixels; defaults to `COLWIDTH`
-  * `OUTPUTFILE` is the name of the output image file; defaults to `image.png`
+### Encoding Text
+To encode text into a grid of colors:
 
-That is, `colorcode.py - 1 1 image.png` and `colorcode.py -` are equivalent.
+```bash
+python colorcode.py --inputfile   [-]         \
+                    --outputfile  [image.png] \
+                    --blocksize   [1 1]       \
+                    --ncols NCOLS []          \
+                    --nrows NROWS []
+```
+Here,
 
-The last two numbers from the output (the color dimensions) are important for decoding the image (see below)
+  * `-i`, `--inputfile`: either `-` for standard input (default) or a text file with the message
+  * `-o`, `--outputfile`: name of output file (default: `image.png`)
+  * `-b`, `--blocksize`: size of grid blocks in pixels _x_, _y_ (default: 1 &times; 1)
+  * Either
+    * provide neither of `-nc`, `--ncols` and `-nr`, `--nrows`, in which case the output grid will attempt to be approximately square
+    * provide one of them; the other will be computed. If both are given, `--nrows` is ignored
 
-#### Decoding Images
-To decode an image file produced in this way, do
-````
-decode.py INPUTFILE [COLS][ROWS]
-````
-Options:
-  * `COLS` (`ROWS`) is the number of distinct columns (rows) in the image grid, or equivalently,  
-    `COLS` (`ROWS`) is the image width (height) divided by `COLWIDTH` (`ROWHEIGHT`)
-    * Specify neither (then, every pixel will be assumed to be a new color; equivalent to `decode.py INPUTFILE 1 1`)
-    * Specify both; just one number cannot be specified
+Suggested inputs include
 
-The decoded text will be printed to the terminal.
+```
+  --blocksize 40 40
+  --nrows 1
+```
 
-### Example
-`ring.txt` contains the Ring Inscription from The Lord of the Rings.  
-`ring.png` was produced with
-````
-colorcode.py ring.txt 20 20 ring.png
-````
-producing the output
-````
-'ring.png' created: 220 x 240 px, 11 x 12 colors.
-````
-and can be decoded with
-````
-decode.py ring.png 11 12
-````
+The first makes blocks 40 &times; 40 pixels.  
+The second makes the image contain exactly one row, useful for names.
 
-I included additional poems as samples:
-  * `ring.txt` is the Ring Inscription from The Lord of the Rings
-  * `written_in_northampton_county_asylum.txt` is a poem by John Clare
-  * `i_am.txt` is a final published version of the same poem differing slightly; comparing the images is interesting
-  * `desiderata.txt` is the Desiderata by Max Ehrmann
+### Decoding Images
+To decode an image file produced in this way, run the output given by the encoding step:
 
-### Technical Details
-#### Overview
-The script multiplies the ASCII value of each character by 2, and produces one color for every 3 characters, corresponding to the RGB value.
+```bash
+python colorcode.py --decode              \
+                    --inputfile image.png \
+                    --nrows 10            \
+                    --ncols 10
+```
 
-For example, "Dog" has ASCII values 68, 111, and 103, so the corresponding color would be RGB(136,222,206), or hex #88DECE.
+Here,
 
-#### Why Multiply by 2?
-The ASCII values were multiplied by 2 because ASCII characters end at 127, which means that direct RGB values of ASCII characters are rather dark, since they are restricted to the lower half of their spectrum. Conveniently, 126 is less than half of 255, so multiplying by 2 simply shifts the spectrum into the brighter half without overflow.
+  * `-d`, `--decode`: flag indicating that the script run in decode mode
+  * `-i`, `--inputfile`: encoded image from the previous step
+  * Both `-nr` and `-nc` must be given; otherwise, the script assumes the block size is 1 &times; 1 pixel
 
-#### Choosing Dimensions and the Number of Colors
-A single row is an easy way to store the sequence of colors, suitable for short strings like names, but impractical for entire poems. An image that is close to square looks best, but the color dimensions also need to be integral. It's also slightly complicated by the fact that the required number of colors is the ceiling of the message length divided by 3.
+## `steganography.py`
+### Encoding Text
+To encode text into the least significant bits of an existing image,
 
-So I took X = floor(L/3 + B), where L is the message length and B is 1 if L mod 3 = 0, 0 otherwise. That way, I add an extra color if L/3 is not divisible by 3, but keep the number of colors if it is. Then I set Y = X, and checked if XY < L/3 + B, added a row (Y = Y + 1) if not, checked if XY < L/3 + B again, and added a column (X = X + 1) if not. X and Y are then the final color dimensions.
+```bash
+python steganography.py --inputimage image.png \
+                        --message    [-]
+```
 
-I think this is the best way of getting as close to a square as possible without doing some weird Diophantine equation calculations, or trying to figure out which composite number area is closest to the message length divided by 3, and still guaranteeing I have enough squares to hold the entire message.
+Here,
 
-When L/3 mod 3 is not 0, the extra color has either R and G set, with B zero, or R set, with G and B zero. So the last color is usually darker than any of the others.
+  * `-i`, `--inputimage`: required input image
+  * `-m`, `--message`: either `-` for standard input (default) or a text file with the message
 
-There are usually extra squares, because L/3 + B is usually not a square. The extra squares are filled with white.
+A new image is created with a `steg_` prefix.
 
-When decoding the message, the 0 and 255 (divided by 2, of course) from the extra colors and extra squares are converted to ASCII too. Fortunately for me, 0 maps to NULL, and 127 maps to DEL, neither of which do anything when printed to a screen. Just in case you want to pipe the output to a file, though, to prevent the terminal from treating the text file like a binary file, I stripped all NULLs and DELs from the end of the decoded message. They were never part of the message anyway, and the result is the original input.
+### Decoding Images
+To decode an image file produced this way, run the output produced by the encoding step:
 
-## `steg_encode.py`
-### Usage
-#### Encoding Text
-This script requires a preexisting image file `INPUTIMAGE`.
+```bash
+python steganography.py --decode                   \
+                        --inputimage steg_image.png
+```
 
-To encode the text in a file, do
-````
-steg_encode.py INPUTIMAGE INPUTFILE
-````
-To encode text from a command-line prompt, do
-````
-steg_encode.py INPUTIMAGE
-````
+Here,
 
-An image file `encoded_INPUTIMAGE` will be produced.
+  * `-d`, `--decode`: flag indicating that the script run in decode mode
+  * `-i`, `--inputfile`: encoded image from the previous step
 
-#### Decoding Images
-To decode an image file produced in this way, do
-````
-steg_decode.py INPUTIMAGE
-````
+Because of the technical details of this implementation, **two messages may be encoded into the same image**: one with `colorcode.py`, and one with `steganography.py` using the image produced by `colorcode.py`.
 
-The decoded text will be printed to the terminal.
+## Technical Details
+### Overview
+`colorcode.py`
 
-### Example
-`encoded_ring.png` was produced with
-````
-steg_encode.py ring.png desiderata.txt
-````
-and can be decoded with
-````
-steg_decode.py encoded_ring.png
-````
+  1. takes in a string of characters
+  2. multiplies the [ASCII]() value of each character by 2
+  3. groups the resulting array of numbers into triplets, filling zeros for any leftovers
+  4. interprets each triplet as an RGB color
+  5. writes the colors to a .png file
 
-### Technical Details
-The script converts the ASCII value of each character into its 8-bit binary representation, then sets the least significant bit of the RGB values of each pixel one at a time. All unused pixels' RGB values' LSBs are set to zero.
+For example, **Dog** has ASCII values **68**, **111**, and **103**, so the corresponding color would be **_RGB_(136,222,206)**, or **hex #88DECE**.
 
-For example, 8 pixels could hold 24 bits, or 3 characters. "Dog" has ASCII values 68, 111, and 103, whose 8-bit binary representations are 01000100, 01101111, and 01100111. The last bit in the RGB values of the 8 pixels would be set to each of these bits in order.
+`steganography.py`
 
-To prevent junk when decoding, the last bit in all channels in all pixels are set to zero, then stripped when decoded; thus, the only step required to set the values of each channel correctly is to add 1 to the value if the bit to be encoded is 1; nothing needs to be done if the bit to be encoded is 0. The image will be very slightly different overall, but not enough to be distinguishable by eye.
+  1. takes in an image and a message
+  2. turns every character in the message into its 8-bit binary representation
+  3. presets the least significant bit (the 1's digit) of every channel of every pixel of the image to 0
+  4. sets the least significant bit of every channel _R_, _G_, _B_ (in that order) of each pixel to message bit
+  5. writes the transformed image to a new file
 
-Interestingly, because my `colorcode.py` script multiplies ASCII values by 2, all RGB values are automatically divisible by 2 and therefore all RGB channels' final bits are zero -- that is, the zero-initialization mentioned above doesn't need to be done for images produced by my `colorcode.py` script. Even more interestingly, because `decode.py` divides the values by 2, and integer division in computer programs is automatically a floor, the last bit is actually discarded, assumed to be zero. That means that `steg_encode.py` does not interfere with the message hidden in any images produced by `colorcode.py`, and two messages can be hidden in the same image file!
+For example, the 8-bit ASCII values of **Dog** are **01000100**, **01101111**, and **01100111**, which are correspondingly set into the LSBs of 8 consecutive pixels.
 
-In other words, `encoded_ring.png` can also be decoded with `decode.py`, yielding the original `ring.txt`, in addition to being able to be decoded by `steg_decode.py`, yielding `desiderata.txt`.
+### Why Multiply by 2?
+The ASCII values were multiplied by 2 because ASCII characters end at 127, which means that direct RGB values of ASCII characters are rather dark, since they are restricted to the lower half of their spectrum. Conveniently, 127 is less than half of 255, so multiplying by 2 simply shifts the spectrum into the brighter half without overflow.
+
+### Choosing Dimensions and the Number of Colors
+
+For the discussion that follows, let $L$ be the message length.  
+Then the number of blocks required is $B = \lceil{L/3}\rceil$.
+
+#### Single row
+A single row is an easy and suitable way to represent short strings like names. This is achieved with `--nrows 1`.
+
+#### Explicit specification of rows or columns
+One can explicitly choose a number of rows or columns with `--nrows` or `--ncols`.  
+Suppose we explicitly choose $n_\text{cols}$.  
+Then $n_\text{rows} = \lceil{B / n_\text{cols}}\rceil$.  
+Swap rows and columns if $n_\text{rows}$ is explicitly chosen instead. _\
+
+#### Automatic dimensions close to square
+For long passages, an image that is close to square looks best.  
+The following procedure chooses suitable dimensions.
+
+Consider $n = \lfloor{\sqrt{B}}\rfloor$, and begin with $n_\text{rows} = n_\text{cols} = n$.  
+If $n^2 < B$, add a row: $n_\text{rows} \rightarrow n_\text{rows} + 1$.  
+If $n_\text{cols} \times n_\text{rows} < B$, add a column: $n_\text{cols} \rightarrow n_\text{cols} + 1$
+
+#### Extra colors and values
+When ${L \pmod 3 \not \equiv 0}$, an extra color is required that either has a nonzero value for the _R_ channel only, or for _R_ and _G_ only, with _B_ zero. This last color is therefore usually darker than any of the others.
+
+Unless $n_\text{cols} \times n_\text{rows} = B$, there will be extra squares not corresponding to the message. These extra squares are filled with white.
+
+These extra 0's and 255's do not affect the decoding process. When decoding the message, 0 and 255, floor divided by 2, give 0 and 127, which correspond to `NULL` and `DEL`, neither of which do anything when printed to a screen. Nevertheless, these characters are stripped from the decoded string of characters.
+
+#### Least significant bits
+All LSBs are set to 0 initially to prevent junk when decoding. This affects the image slightly, but not enough to distinguishable by eye.
+
+For a message with $M$ characters, there needs to be at least $\lceil{8M/3}\rceil$ pixels in the image.
+
+Once all LSBs are set to zero, the final step is to add 1 to each channel corresponding to a 1 in the binary representation of the message.
+
+#### Combining the two scripts
+
+Since `colorcode.py` multiplies ASCII values by 2, an image produced by it has only RGB values divisible by 2; i.e., their LSBs are all 0. When decoding, the floor division by 2 simply bit-shifts the values to the right, and the LSB is discarded.
+
+Therefore, `steganography.py` does not interfere with images produced by `colorcode.py`, and can be used to encode a second message within the LSBs of the same image file. Decoding the colors is done with `colorcode.py`; decoding the LSBs is done with `steganography.py`.
