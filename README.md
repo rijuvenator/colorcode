@@ -136,37 +136,37 @@ The ASCII values were multiplied by 2 because ASCII characters end at 127, which
 
 ### Choosing Dimensions and the Number of Colors
 
-For the discussion that follows, let $L$ be the message length.  
-Then the number of blocks required is $B = \lceil{L/3}\rceil$.
+For the discussion that follows, let **_L_** be the message length.  
+Then the number of blocks required is **_B_ = ceil(_L_ / 3)**
 
 #### Single row
 A single row is an easy and suitable way to represent short strings like names. This is achieved with `--nrows 1`.
 
 #### Explicit specification of rows or columns
 One can explicitly choose a number of rows or columns with `--nrows` or `--ncols`.  
-Suppose we explicitly choose $n_\text{cols}$.  
-Then $n_\text{rows} = \lceil{B / n_\text{cols}}\rceil$.  
-Swap rows and columns if $n_\text{rows}$ is explicitly chosen instead. _\
+Suppose we explicitly choose **_n_<sub>cols</sub>**.  
+Then **_n_<sub>rows</sub> = ceil(B / _n_<sub>cols</sub>)**.  
+Swap rows and columns if **_n_<sub>rows</sub>** is explicitly chosen instead.
 
 #### Automatic dimensions close to square
 For long passages, an image that is close to square looks best.  
 The following procedure chooses suitable dimensions.
 
-Consider $n = \lfloor{\sqrt{B}}\rfloor$, and begin with $n_\text{rows} = n_\text{cols} = n$.  
-If $n^2 < B$, add a row: $n_\text{rows} \rightarrow n_\text{rows} + 1$.  
-If $n_\text{cols} \times n_\text{rows} < B$, add a column: $n_\text{cols} \rightarrow n_\text{cols} + 1$
+Consider **_n_ = floor(&radic;_B_)** and begin with **_n_<sub>rows</sub> = _n_<sub>cols</sub> = _n_**.  
+If **_n_<sup>2</sup> < _B_**, add a row: **_n_<sub>rows</sub> &rightarrow; _n_<sub>rows</sub> + 1**.  
+If **_n_<sub>rows</sub> &times; _n_<sub>cols</sub> < _B_**, add a column: **_n_<sub>cols</sub> &rightarrow; _n_<sub>cols</sub> + 1**
 
 #### Extra colors and values
-When ${L \pmod 3 \not \equiv 0}$, an extra color is required that either has a nonzero value for the _R_ channel only, or for _R_ and _G_ only, with _B_ zero. This last color is therefore usually darker than any of the others.
+When **_L_ mod 3 &#8802; 0**, an extra color is required that either has a nonzero value for the _R_ channel only, or for _R_ and _G_ only, with _B_ zero. This last color is therefore usually darker than any of the others.
 
-Unless $n_\text{cols} \times n_\text{rows} = B$, there will be extra squares not corresponding to the message. These extra squares are filled with white.
+Unless **_n_<sub>rows</sub> &times; _n_<sub>cols</sub> = _B_**, there will be extra squares not corresponding to the message. These extra squares are filled with white.
 
 These extra 0's and 255's do not affect the decoding process. When decoding the message, 0 and 255, floor divided by 2, give 0 and 127, which correspond to `NULL` and `DEL`, neither of which do anything when printed to a screen. Nevertheless, these characters are stripped from the decoded string of characters.
 
 #### Least significant bits
 All LSBs are set to 0 initially to prevent junk when decoding. This affects the image slightly, but not enough to distinguishable by eye.
 
-For a message with $M$ characters, there needs to be at least $\lceil{8M/3}\rceil$ pixels in the image.
+For a message with **_M_** characters, there needs to be at least **ceil(8_M_/3)** pixels in the image.
 
 Once all LSBs are set to zero, the final step is to add 1 to each channel corresponding to a 1 in the binary representation of the message.
 
