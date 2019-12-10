@@ -119,7 +119,7 @@ Because of the technical details of this implementation, **two messages may be e
   4. interprets each triplet as an RGB color
   5. writes the colors to a .png file
 
-For example, **Dog** has ASCII values **68**, **111**, and **103**, so the corresponding color would be **_RGB_(136,222,206)**, or **hex #88DECE**.
+For example, **Dog** has ASCII values **68**, **111**, and **103**, so the corresponding color would be **_RGB_(136,222,206)**, or **#88DECE**.
 
 `steganography.py`
 
@@ -129,7 +129,7 @@ For example, **Dog** has ASCII values **68**, **111**, and **103**, so the corre
   4. sets the least significant bit of every channel _R_, _G_, _B_ (in that order) of each pixel to message bit
   5. writes the transformed image to a new file
 
-For example, the 8-bit ASCII values of **Dog** are **01000100**, **01101111**, and **01100111**, which are correspondingly set into the LSBs of 8 consecutive pixels.
+For example, **Dog** has 8-bit binary ASCII values of **01000100**, **01101111**, and **01100111**, which are correspondingly set as the LSBs of the _RGB_ channels of 8 consecutive pixels: **010 001 000 110 111 101 100 111**.
 
 ### Why Multiply by 2?
 The ASCII values were multiplied by 2 because ASCII characters end at 127, which means that direct RGB values of ASCII characters are rather dark, since they are restricted to the lower half of their spectrum. Conveniently, 127 is less than half of 255, so multiplying by 2 simply shifts the spectrum into the brighter half without overflow.
@@ -163,14 +163,14 @@ Unless **_n_<sub>rows</sub> &times; _n_<sub>cols</sub> = _B_**, there will be ex
 
 These extra 0's and 255's do not affect the decoding process. When decoding the message, 0 and 255, floor divided by 2, give 0 and 127, which correspond to `NULL` and `DEL`, neither of which do anything when printed to a screen. Nevertheless, these characters are stripped from the decoded string of characters.
 
-#### Least significant bits
+### Least significant bits
 All LSBs are set to 0 initially to prevent junk when decoding. This affects the image slightly, but not enough to distinguishable by eye.
 
-For a message with **_M_** characters, there needs to be at least **ceil(8_M_/3)** pixels in the image.
+For a message with **_M_** characters, there needs to be at least **ceil(8 _M_ / 3)** pixels in the image.
 
 Once all LSBs are set to zero, the final step is to add 1 to each channel corresponding to a 1 in the binary representation of the message.
 
-#### Combining the two scripts
+### Combining the two scripts
 
 Since `colorcode.py` multiplies ASCII values by 2, an image produced by it has only RGB values divisible by 2; i.e., their LSBs are all 0. When decoding, the floor division by 2 simply bit-shifts the values to the right, and the LSB is discarded.
 
