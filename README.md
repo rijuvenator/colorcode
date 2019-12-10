@@ -3,7 +3,7 @@
 These are **Python 3.7** scripts to encrypt ASCII text into images.
 
   * `colorcode.py` encodes ASCII values into an RGB color grid and produces an image
-  * `steganography.py`  encodes binary ASCII values across the LSBs of the RGB channels of an existing image (see [Steganography](https://en.wikipedia.org/wiki/Steganography))
+  * `steganography.py`  encodes binary ASCII values across the LSBs of the RGB channels of an existing image
 
 `demo.png` encodes the source code of `colorcode.py` _using_ `colorcode.py`, _and_ the source code of `steganography.py` _using_ `steganography.py`.
 
@@ -114,9 +114,9 @@ Because of the technical details of this implementation, **two messages may be e
 `colorcode.py`
 
   1. takes in a string of characters
-  2. multiplies the [ASCII](https://en.wikipedia.org/wiki/ASCII) value of each character by 2
+  2. multiplies the ASCII value of each character by 2
   3. groups the resulting array of numbers into triplets, filling zeros for any leftovers
-  4. interprets each triplet as [true RGB color](https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit))
+  4. interprets each triplet as true RGB color
   5. writes the colors to a .png file
 
 For example, **Dog** has ASCII values **68**, **111**, and **103**, so the corresponding color would be **_RGB_(136,222,206)**, or **#88DECE**.
@@ -125,7 +125,7 @@ For example, **Dog** has ASCII values **68**, **111**, and **103**, so the corre
 
   1. takes in an image and a message
   2. turns every character in the message into its 8-bit binary representation
-  3. presets the [least significant bit](https://en.wikipedia.org/wiki/Bit_numbering#Least_significant_bit) (the 1's digit) of every channel of every pixel of the image to 0
+  3. presets the least significant bit (the 1's digit) of every channel of every pixel of the image to 0
   4. sets the least significant bit of every channel _R_, _G_, _B_ (in that order) of each pixel to message bit
   5. writes the transformed image to a new file
 
@@ -175,3 +175,11 @@ Once all LSBs are set to zero, the final step is to add 1 to each channel corres
 Since `colorcode.py` multiplies ASCII values by 2, an image produced by it has only RGB values divisible by 2; i.e., their LSBs are all 0. When decoding, the floor division by 2 simply bit-shifts the values to the right, and the LSB is discarded.
 
 Therefore, `steganography.py` does not interfere with images produced by `colorcode.py`, and can be used to encode a second message within the LSBs of the same image file. Decoding the colors is done with `colorcode.py`; decoding the LSBs is done with `steganography.py`.
+
+## References
+
+  1. [Pillow](https://python-pillow.org/) – Python's image processing library
+  2. [8-bit ASCII](https://en.wikipedia.org/wiki/ASCII) – standard mapping of characters to numbers
+  3. [24-bit RGB color](https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)) – standard mathematical color model used by most displays and images
+  4. [Steganography](https://en.wikipedia.org/wiki/Steganography) – encrypting a message by hiding it within other media
+  5. [Least significant bit](https://en.wikipedia.org/wiki/Bit_numbering#Least_significant_bit) – binary bit numbering
